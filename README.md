@@ -17,3 +17,10 @@ You will then be asked:
   
 The macro should then run. The macro opens images individually so should only require as much RAM as it takes to open a single 2D image, rather than the whole image sequence
 
+## To Download the Macro
+Click the green Code button above and select "Download Zip". Unzip the folder to your desired location.
+
+
+## Acknowledgements
+If you use this macro or an adapted version please acknowledge CAMDU. Guidance to acknowledging CAMDU can be found here:
+https://warwick.ac.uk/fac/sci/med/research/biomedical/facilities/camdu/acknowledgementpolicy/
