@@ -1,5 +1,5 @@
 # Well Intensities
-Author: Laura Cooper, l.cooper.5@warwick.ac.uk
+Author: Laura Cooper, camdu@warwick.ac.uk
 
 ImageJ Macro for measuring the fluoresence intensity of wells in a well plate.
 
