@@ -8,12 +8,12 @@ The macro automatically detects the position of the wells, estimates the pixel r
 ## To Run the Macro
 In Fiji go to Plugins > Marco > Run... and open the MeasureIntensityWells.ijm file.\
 You will then be asked:
-1) "Which folder contains the images?" Navigate inside the folder that contains the images. This should contain 2D images files.\
-2) "Where should the results file be saved?" Navigate inside the folder where you would like the resulting .csv file to be saved.\
+1) "Which folder contains the images?" Navigate inside the folder that contains the images. This should contain 2D images files.
+2) "Where should the results file be saved?" Navigate inside the folder where you would like the resulting .csv file to be saved.
 3) Required Inputs: 
-  - Name of the results file: Enter the name of the results file here. This should have the .csv file extension. \
-  - Median radius: This is the radius of the median used to smooth the image and remove bright spots. The default is 3.\
-  - Number of wells, must be even: This is the total number of wells you expect to be in the image. It is assumed there are two rows of wells and therefore this number must be even or the macro will return an error. The default is 6.\
+  - Name of the results file: Enter the name of the results file here. This should have the .csv file extension.
+  - Median radius: This is the radius of the median used to smooth the image and remove bright spots. The default is 3.
+  - Number of wells, must be even: This is the total number of wells you expect to be in the image. It is assumed there are two rows of wells and therefore this number must be even or the macro will return an error. The default is 6.
   
 The macro should then run. The macro opens images individually so should only require as much RAM as it takes to open a single 2D image, rather than the whole image sequence
 
