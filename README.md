@@ -1,5 +1,5 @@
 # Well Intensities
-Author: Laura Cooper, l.cooper.5@warwick.ac.uk
+Author: Laura Cooper, camdu@warwick.ac.uk
 
 ImageJ Macro for measuring the fluoresence intensity of wells in a well plate.
 
@@ -23,5 +23,5 @@ Click the green Code button above and select "Download Zip". Unzip the folder to
 
 
 ## Acknowledgements
-If you use this macro or an adapted version please acknowledge CAMDU. Guidance to acknowledging CAMDU can be found here:
+If you use this macro or an adapted version please acknowledge CAMDU. Guidance for acknowledging CAMDU can be found here:
 https://warwick.ac.uk/fac/sci/med/research/biomedical/facilities/camdu/acknowledgementpolicy/
