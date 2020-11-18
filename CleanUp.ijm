@@ -13,7 +13,7 @@ function cleanUp() {
           selectImage(nImages());  
           run("Close");
     }
-    if (isOpen("ROI Manager)) {
+    if (isOpen("ROI Manager")) {
     	selectWindow("ROI Manager");
     	run("Close");
 	}
