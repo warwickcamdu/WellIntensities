@@ -29,8 +29,7 @@ function get_rois(input,filename){
 	setAutoThreshold("Huang dark");
 	setOption("BlackBackground", false);
 	run("Convert to Mask");
-	run("Analyze Particles...", "size=100-Infinity show=Nothing add");
-
+	run("Analyze Particles...", "size=1000-Infinity show=Nothing add");
 	run("Set Measurements...", "area bounding redirect=None decimal=3");
 	roi_count=roiManager("count");
 	//Check to see if the number of wells found is what is expected. If not stop and show error.
@@ -40,18 +39,39 @@ function get_rois(input,filename){
 		Dialog.show();
 		exit("Unexpected number of wells found");
 	}
-	//Estimate image calibration from top row of wells
-	for (i=0;i<num_wells/num_rows;i++){
-		roiManager("select",i)
-		run("Measure");
-	}
+	
+	//Estimate image calibration from row containing largest bounding box
+	roi_list=Array.getSequence(num_wells);
+	roiManager("select",roi_list);
+	roiManager("Measure");
 	run("Summarize");
-	//Estimate how many pixels in well diameter
+	//Find well with largest bounding box
 	//getResult counts from 0
-	Well_Diam=Math.ceil(maxOf(getResult("Width",num_wells/num_rows),getResult("Height",num_wells/num_rows)));
+	max_width=getResult("Width",Table.size-1);
+	max_height=getResult("Height",Table.size-1);
 	selectWindow("Results");
 	run("Close");
-	
+	roiManager("Measure");
+	Table.setColumn("Well", roi_list);
+	updateResults();
+	if (max_width>=max_height){
+		Table.sort("Width");
+		column="Width";
+	} else {
+		Table.sort("Height");
+		column="Height";
+	}
+	max_ind_well=getResult("Well",Table.size-1);
+	wells_per_row=num_wells/num_rows;
+	//Find well row containing that bounding box
+	max_well_row=Math.floor(max_ind_well/wells_per_row);
+	roiManager("select",Array.slice(roi_list,max_well_row*wells_per_row,(max_well_row*wells_per_row)+(wells_per_row-1)));
+	selectWindow("Results");
+	run("Close");
+	roiManager("Measure");
+	Well_Diam=getResult(column, "Mean");
+
+	//Estimate how many pixels in well diameter
 	for (i=0;i<num_wells;i++){
 		roiManager("select",i);
 		run("Fit Circle");
@@ -61,12 +81,11 @@ function get_rois(input,filename){
 		run("Enlarge...", "enlarge="+(Well_Diam-Diameter)/2);
 		roiManager("add");
 	}
-
-	//Clean up temporary rois and results
-	roi_list=Array.getSequence(num_wells);
+	//Clean up temporary rois
 	roiManager("select",roi_list);
 	roiManager("delete");
-	//Group upper and lower wells
+
+	//Group well rows
 	min_well=0;
 	max_well=num_wells/num_rows;
 	while (max_well<=num_wells) {
@@ -74,11 +93,12 @@ function get_rois(input,filename){
 		roiManager("Combine");
 		roiManager("Add");
 		min_well=max_well;
-		max_well=max_well+num_wells/num_rows;
+		max_well=max_well+(num_wells/num_rows);
 	}
-	//Clear original rois
+	//Clean up temporary rois and results
 	roiManager("select",roi_list);
 	roiManager("delete");
+
 	run("Clear Results");
 	//close("*");
 }
@@ -89,8 +109,32 @@ function measure_rois(input,filename){
 	//This should be the same in both functions
 	run("Median...", "radius="+med_rad);
 	roiManager("Measure");
-	close("*");	
+	close();
 }
+
+//Reformat the results into a table for easy plotting
+function reformatResults(num_rows,time_step){
+	headings = split(String.getResultsHeadings);
+	Time=Array.getSequence(nResults/num_rows);
+	for (j=0;j<Time.length;j++) {
+		Time[j]*=time_step;
+	}
+	Table.create("Mean Well Intensities Over Time");
+	Table.setColumn("Time",Time);
+	for (n = 0; n < num_rows; n++){
+		for (a=0; a< lengthOf(headings); a++){
+			Table.setColumn(headings[a]+d2s(n+1,0) ,Time);
+		}
+	}
+	for (n = 0; n < Table.size; n++) {
+		for (i = 0; i < num_rows; i++) {
+			Table.set(headings[0]+d2s(i+1,0) ,n, getResult("Mean", n*num_rows+i));
+			Table.set(headings[1]+d2s(i+1,0) ,n, getResult("StdDev", n*num_rows+i));
+		}
+	}
+	Table.update;
+}
+
 //Close everything before starting
 cleanUp();
 
@@ -109,47 +153,33 @@ Dialog.addNumber("Median radius:", 3);
 //How many wells should there be?
 Dialog.addNumber("Number of wells", 6);
 Dialog.addNumber("Number of rows", 2);
+Dialog.addNumber("Time Step", 1);
 Dialog.show();
 result_title=Dialog.getString();
 med_rad=Dialog.getNumber();
 num_wells=Dialog.getNumber();
 num_rows=Dialog.getNumber();
+time_step=Dialog.getNumber();
 
 if (num_wells%num_rows==0){
-	
-	setBatchMode(false);
 	//Get the position of the wells from first file
 	get_rois(dir_in,list[0]);
-	run("Set Measurements...", "area mean standard modal min median redirect=None decimal=3");
+	setBatchMode(true);
+	run("Set Measurements...", "mean standard redirect=None decimal=3");
 	//Measure rois for all images in directory
 	for (i = 0; i < list.length; i++){
         measure_rois(dir_in, list[i]);
 	}
 
 	//Reformat results
-	headings = split(String.getResultsHeadings);
-	File.open(dir_out+result_title);
-	line = "Image Number";
-	for (a=0; a<lengthOf(headings); a++) {
-    	line = line + "," + headings[a];
-	}
-	print(line);
-		for (n=0; n<num_rows; n++){
-			print("Well Row " + (n+1));
-			im_num=1;
-			//Copy every num_rows row to file
-			for (i = n; i < nResults(); i+=num_rows) {
-				//Start with blank line
-				line = d2s(im_num,0);
-				for (a=0; a<lengthOf(headings); a++){
-    				line = line + "," + getResult(headings[a],i);
-				}
-				print(line);
-				im_num++;
-			}
-		}
+	reformatResults(num_rows,time_step);
+	//Close results window to avoid confusion
+	selectWindow("Results");
+    run("Close" );
 	//Save results and close windows
-	saveAs("Text", dir_out+result_title);
+	selectWindow("Mean Well Intensities Over Time");
+	saveAs("Results", dir_out+result_title);
+	IJ.renameResults(result_title,"Results");
 	//cleanUp();
 	setBatchMode(false);
 }
