@@ -30,19 +30,41 @@ function get_rois(input,filename){
 	setOption("BlackBackground", false);
 	run("Convert to Mask");
 	run("Analyze Particles...", "size=1000-Infinity show=Nothing add");
-	run("Set Measurements...", "area bounding redirect=None decimal=3");
 	roi_count=roiManager("count");
-	//Check to see if the number of wells found is what is expected. If not stop and show error.
+	//Check to see if the number of wells found is what is expected. If not stop, crop region or show error.
 	if (roi_count!=num_wells){
 		Dialog.create("Unexpected number of wells found");
 		Dialog.addMessage(roi_count+" wells found");
+		Dialog.addCheckbox("Do you want to crop this image?", true)
 		Dialog.show();
-		exit("Unexpected number of wells found");
+		do_crop=Dialog.getCheckbox();
+		if (do_crop) {
+			run("Set Measurements...", "centroid redirect=None decimal=3");
+			roiManager("Measure");
+			setTool("rectangle");
+			waitForUser("Select region containing wells. Click OK when done.");
+			roiManager("Add")
+			roiManager("Select",nResults());
+			for (i = 0; i < nResults(); i++) {
+				if (selectionContains(getResult("X",i), getResult("Y",i))) {
+					roiManager("Select",i);
+					roiManager("Add")
+					roiManager("Select",nResults());
+				}
+			}
+			roiManager("Select", Array.getSequence(nResults()+1));
+			roiManager("Delete");
+			selectWindow("Results");
+			run("Close");
+		} else {
+			exit("Unexpected number of wells found. Exiting macro");
+		}
 	}
 	
 	//Estimate image calibration from row containing largest bounding box
 	roi_list=Array.getSequence(num_wells);
 	roiManager("select",roi_list);
+	run("Set Measurements...", "area bounding redirect=None decimal=3");
 	roiManager("Measure");
 	run("Summarize");
 	//Find well with largest bounding box
